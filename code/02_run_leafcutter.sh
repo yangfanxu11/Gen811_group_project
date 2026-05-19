@@ -1,87 +1,54 @@
 #!/bin/bash
-
-#####################################################################
-# Script: 02_run_leafcutter.sh
-# Purpose: Run Leafcutter clustering and differential analysis
-#####################################################################
-
 set -e
-set -u
 
 echo "======================================================================"
 echo "STEP 2: LEAFCUTTER DIFFERENTIAL SPLICING ANALYSIS"
 echo "======================================================================"
 
-# Define paths
+# 使用绝对路径
 PROJECT_DIR="/home/users/yx1040/Gen811_group_project"
 JUNC_DIR="${PROJECT_DIR}/data/leafcutter/juncfiles"
-OUTPUT_DIR="${PROJECT_DIR}/data/leafcutter"
-
-# Leafcutter paths (adjust if needed)
-LEAFCUTTER_DIR="${HOME}/leafcutter"
-CLUSTER_SCRIPT="${LEAFCUTTER_DIR}/clustering/leafcutter_cluster_regtools.py"
-DIFF_SCRIPT="${LEAFCUTTER_DIR}/scripts/leafcutter_ds.R"
-
-# Check Leafcutter installation
-if [ ! -f "${CLUSTER_SCRIPT}" ]; then
-    echo "ERROR: Leafcutter not found at ${LEAFCUTTER_DIR}"
-    echo "Please install Leafcutter or update LEAFCUTTER_DIR"
-    exit 1
-fi
-
-cd ${OUTPUT_DIR}
+OUT_DIR="${PROJECT_DIR}/data/leafcutter"
+CLUSTER_SCRIPT="$HOME/leafcutter/clustering/leafcutter_cluster.py"
+DIFF_SCRIPT="$HOME/leafcutter/scripts/leafcutter_ds.R"
 
 echo ""
 echo "[2.1] Clustering introns..."
 echo "----------------------------------------------------------------------"
-
+cd ${OUT_DIR}
 python ${CLUSTER_SCRIPT} \
     -j ${JUNC_DIR}/juncfile_list.txt \
-    -m 50 \
+    -m 20 \
     -o leafcutter \
     -l 500000
 
 echo "  ✓ Clustering complete"
-
-if [ ! -f "leafcutter_perind.counts.gz" ]; then
-    echo "ERROR: Clustering failed"
-    exit 1
-fi
+echo "Total lines: $(zcat leafcutter_perind.counts.gz | wc -l)"
 
 echo ""
 echo "[2.2] Differential splicing analysis..."
 echo "----------------------------------------------------------------------"
-
-Rscript ${DIFF_SCRIPT} \
+Rscript ${PROJECT_DIR}/leafcutter_ds_fixed.R \
     --num_threads 4 \
-    --FDR 0.05 \
+    --min_samples_per_intron 2 \
+    --min_samples_per_group 2 \
+    --min_coverage 10 \
+    --output_prefix diff_splicing \
     leafcutter_perind.counts.gz \
-    ${JUNC_DIR}/groups_file.txt \
-    --output_prefix diff_splicing
+    ${JUNC_DIR}/groups_file.txt
 
-echo "  ✓ Analysis complete"
-
-# Rename for clarity
 if [ -f "diff_splicing_cluster_significance.txt" ]; then
     cp diff_splicing_cluster_significance.txt diff_splicing_results.txt
+    
+    TOTAL=$(wc -l < diff_splicing_results.txt)
+    echo "  ✓ Differential analysis complete"
+    echo "  Total clusters tested: $((TOTAL - 1))"
+else
+    echo "  ✗ Error: diff_splicing_cluster_significance.txt not found"
+    exit 1
 fi
 
 echo ""
-echo "[2.3] Summary..."
-echo "----------------------------------------------------------------------"
-
-TOTAL=$(wc -l < diff_splicing_results.txt)
-TOTAL=$((TOTAL - 1))
-SIG=$(awk 'NR>1 && $5<0.05' diff_splicing_results.txt | wc -l)
-
-echo "Total testable: ${TOTAL}"
-echo "Significant (FDR<0.05): ${SIG}"
-
-echo ""
 echo "======================================================================"
-echo "STEP 2 COMPLETE"
-echo "======================================================================"
-echo "Output:"
-echo "  - leafcutter_perind.counts.gz"
-echo "  - diff_splicing_results.txt"
+echo "LEAFCUTTER ANALYSIS COMPLETE"
 echo "======================================================================"

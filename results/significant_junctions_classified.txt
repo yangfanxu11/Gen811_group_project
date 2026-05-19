@@ -1,0 +1,1 @@
+junction	logFC	FDR	donor	acceptor	strand	canonical	cluster	classification	competitive

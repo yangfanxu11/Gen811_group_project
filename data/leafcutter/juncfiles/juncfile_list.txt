@@ -1,0 +1,6 @@
+/home/users/yx1040/Gen811_group_project/data/leafcutter/juncfiles/WT1.junc
+/home/users/yx1040/Gen811_group_project/data/leafcutter/juncfiles/WT2.junc
+/home/users/yx1040/Gen811_group_project/data/leafcutter/juncfiles/WT3.junc
+/home/users/yx1040/Gen811_group_project/data/leafcutter/juncfiles/WT4.junc
+/home/users/yx1040/Gen811_group_project/data/leafcutter/juncfiles/KD1.junc
+/home/users/yx1040/Gen811_group_project/data/leafcutter/juncfiles/KD2.junc

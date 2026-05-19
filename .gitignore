@@ -1,0 +1,33 @@
+# Large data files
+*.bam
+*.bam.bai
+*.bw
+*.fasta
+*.fasta.fai
+*.gff
+*.gtf
+
+# STAR index
+data/RNASEQ/reference/star_index/
+
+# Intermediate files
+*_pooled
+*_refined
+*_sortedlibs
+
+# Archives
+code/archive_old_attempts/
+
+# R
+.Rhistory
+.RData
+*.Rout
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary
+*.log
+*.tmp
+/tmp/

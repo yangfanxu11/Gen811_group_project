@@ -3,7 +3,7 @@
 #####################################################################
 # Script: 01_leafcutter_prep.sh
 # Purpose: Prepare data for Leafcutter analysis
-# - Extract junctions from BAM files using regtools
+# - Convert STAR SJ.out.tab to Leafcutter format
 # - Create sample list and group files
 #####################################################################
 
@@ -28,33 +28,29 @@ WT_SAMPLES="WT1 WT2 WT3 WT4"
 KD_SAMPLES="KD1 KD2"
 
 echo ""
-echo "[1.1] Extracting junctions from BAM files..."
+echo "[1.1] Converting STAR SJ.out.tab to junc format..."
 echo "----------------------------------------------------------------------"
 
-# Extract junctions for each sample
+# Convert each STAR junction file
 for sample in ${WT_SAMPLES} ${KD_SAMPLES}; do
     echo "Processing: ${sample}"
     
-    BAM_FILE="${BAM_DIR}/${sample}_Aligned.sortedByCoord.out.bam"
+    SJ_FILE="${BAM_DIR}/${sample}_SJ.out.tab"
     JUNC_FILE="${JUNC_DIR}/${sample}.junc"
     
-    if [ ! -f "${BAM_FILE}" ]; then
-        echo "ERROR: BAM file not found: ${BAM_FILE}"
+    if [ ! -f "${SJ_FILE}" ]; then
+        echo "ERROR: SJ file not found: ${SJ_FILE}"
         exit 1
     fi
     
-    # Extract junctions using regtools
-    # -a 8: minimum anchor length
-    # -m 50: minimum intron size
-    # -M 500000: maximum intron size
-    # -s XS: use XS tags from STAR aligner
-    regtools junctions extract \
-        -a 8 \
-        -m 50 \
-        -M 500000 \
-        -s XS \
-        ${BAM_FILE} \
-        -o ${JUNC_FILE}
+    # Convert STAR SJ.out.tab to simple BED6 format
+    # STAR columns: chr start end strand motif annotated uniq_reads multi_reads max_overhang
+    # We need: chr start end name score strand
+    # Only keep junctions with strand info (column 4: 1=+, 2=-)
+    awk 'BEGIN {OFS="\t"} 
+         $4 == 1 {print $1, $2-1, $3, "JUNC", $7, "+"}
+         $4 == 2 {print $1, $2-1, $3, "JUNC", $7, "-"}' \
+         ${SJ_FILE} > ${JUNC_FILE}
     
     echo "  ✓ ${JUNC_FILE}"
     echo "  Junctions: $(wc -l < ${JUNC_FILE})"
