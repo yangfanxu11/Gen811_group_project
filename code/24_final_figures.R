@@ -2,19 +2,19 @@
 
 library(ggplot2)
 
-# 读取数据
+# Read data
 results <- read.table("data/leafcutter/edgeR_diff_junctions.txt",
                       header=TRUE, sep="\t", row.names=1)
 sig <- results[results$FDR < 0.05, ]
 sig$junction <- rownames(sig)
 sig$cluster <- sub(".*:(clu_[0-9]+)_.*", "\\1", sig$junction)
 
-# 分类
+# Classification
 cluster_counts <- table(sig$cluster)
 sig$type <- ifelse(sig$cluster %in% names(cluster_counts[cluster_counts > 1]), 
                    "AS", "TSS/TES")
 
-# 进一步细分AS
+# Further classify AS
 competitive_clusters <- character()
 for (clu in names(cluster_counts[cluster_counts > 1])) {
   junc <- sig[sig$cluster == clu, ]
@@ -29,12 +29,12 @@ sig$subtype[sig$type == "AS" & !(sig$cluster %in% competitive_clusters)] <- "Con
 dir.create("results/figures", showWarnings=FALSE)
 
 # ============================================
-# 图1: AS vs TSS/TES分类
+# Figure 1: AS vs TSS/TES classification
 # ============================================
 
 cat("Generating Figure 1: AS vs TSS/TES classification...\n")
 
-# 统计
+# Statistics
 type_counts <- data.frame(
   Category = c("Alternative Splicing", "Alternative TSS/TES"),
   Count = c(sum(sig$type == "AS"), sum(sig$type == "TSS/TES")),
@@ -44,7 +44,7 @@ type_counts <- data.frame(
   )
 )
 
-# 柱状图
+# Bar plot
 pdf("results/figures/fig1_AS_vs_TSS.pdf", width=8, height=6)
 ggplot(type_counts, aes(x=Category, y=Count, fill=Category)) +
   geom_bar(stat="identity", width=0.6) +
@@ -59,7 +59,7 @@ ggplot(type_counts, aes(x=Category, y=Count, fill=Category)) +
         plot.title=element_text(hjust=0.5, face="bold"))
 dev.off()
 
-# 带细分的版本
+# Detailed version with subtypes
 subtype_counts <- data.frame(
   Category = c("Competitive AS", "Consistent AS", "TSS/TES"),
   Count = c(
@@ -88,7 +88,7 @@ ggplot(subtype_counts, aes(x=reorder(Category, -Count), y=Count, fill=Category))
 dev.off()
 
 # ============================================
-# 图2: Cluster复杂度分布
+# Figure 2: Cluster complexity distribution
 # ============================================
 
 cat("Generating Figure 2: Cluster complexity distribution...\n")
@@ -119,14 +119,14 @@ ggplot(complexity, aes(x=n_junctions)) +
 dev.off()
 
 # ============================================
-# 图4: LogFC分布对比 (AS vs TSS/TES)
+# Figure 4: LogFC distribution comparison (AS vs TSS/TES)
 # ============================================
 
 cat("Generating Figure 4: LogFC distribution comparison...\n")
 
 pdf("results/figures/fig4_logFC_comparison.pdf", width=10, height=6)
 
-# 密度图
+# Density plot
 ggplot(sig, aes(x=logFC, fill=type)) +
   geom_density(alpha=0.6) +
   geom_vline(xintercept=0, linetype="dashed", color="black") +
@@ -141,7 +141,7 @@ ggplot(sig, aes(x=logFC, fill=type)) +
 
 dev.off()
 
-# 箱线图版本
+# Boxplot version
 pdf("results/figures/fig4_logFC_boxplot.pdf", width=8, height=6)
 
 sig$direction <- ifelse(sig$logFC > 0, "Up in KD", "Down in KD")
@@ -160,7 +160,7 @@ ggplot(sig, aes(x=type, y=abs(logFC), fill=type)) +
 
 dev.off()
 
-# 方向性对比
+# Direction comparison
 direction_summary <- aggregate(junction ~ type + direction, sig, length)
 colnames(direction_summary)[3] <- "count"
 
